@@ -2,7 +2,6 @@ package com.example.satellitetracker.presentation
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -14,13 +13,7 @@ import com.example.satellitetracker.presentation.navigation.NavGraph
 fun MainScreen() {
     val navController = rememberNavController()
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            NavigationBar {
-            }
-        }
-    ) {
+    Scaffold(modifier = Modifier.fillMaxSize()) {
         NavGraph(
             navController = navController
         )

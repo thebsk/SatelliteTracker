@@ -9,7 +9,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class GetPositionUpdatesUseCaseTest {
+class GetPositionDtoUpdatesUseCaseTest {
 
     private val repository: SatelliteRepository = mockk()
     private val getPositionUpdatesUseCase = GetPositionUpdatesUseCase(repository)

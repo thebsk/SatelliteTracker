@@ -8,7 +8,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class GetSatelliteDetailUseCaseTest {
+class GetSatelliteDtoDetailUseCaseTest {
 
     private val repository: SatelliteRepository = mockk()
     private val getSatelliteDetailUseCase = GetSatelliteDetailUseCase(repository)

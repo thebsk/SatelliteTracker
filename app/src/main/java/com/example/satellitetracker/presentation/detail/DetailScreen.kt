@@ -69,7 +69,7 @@ fun DetailScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null
+                            contentDescription = "Back"
                         )
                     }
                 }

@@ -38,7 +38,8 @@ import kotlinx.coroutines.flow.onEach
 @Composable
 fun DetailScreen(
     viewModel: DetailViewModel = hiltViewModel(),
-    onBackClick: () -> Unit
+    showSnackBar: (String) -> Unit,
+    onBackClick: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState(initial = DetailUiState())
 
@@ -49,10 +50,7 @@ fun DetailScreen(
     LaunchedEffect(key1 = viewModel.effect) {
         viewModel.effect.onEach { effect ->
             when (effect) {
-                is DetailEffect.ShowError -> {
-                    // TODO: Show snackbar
-                    println("Error: ${effect.message}")
-                }
+                is DetailEffect.ShowError -> { showSnackBar(effect.message) }
             }
         }.collect {}
     }

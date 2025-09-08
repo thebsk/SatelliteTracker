@@ -27,7 +27,10 @@ fun NavGraph(navController: NavHostController, showSnackBar: (String) -> Unit) {
             route = Screen.DetailScreen.route,
             arguments = listOf(navArgument("satelliteId") { type = NavType.IntType })
         ) {
-            DetailScreen(onBackClick = { navController.navigateUp() })
+            DetailScreen(
+                onBackClick = { navController.navigateUp() },
+                showSnackBar = showSnackBar
+            )
         }
     }
 }

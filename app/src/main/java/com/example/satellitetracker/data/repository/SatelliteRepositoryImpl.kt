@@ -5,6 +5,7 @@ import com.example.satellitetracker.data.local.SatelliteDao
 import com.example.satellitetracker.data.local.SatelliteDetailEntity
 import com.example.satellitetracker.data.local.toSatelliteDetail
 import com.example.satellitetracker.data.dto.PositionsResponseDto
+import com.example.satellitetracker.data.dto.SatelliteDetailDto
 import com.example.satellitetracker.data.dto.SatelliteDto
 import com.example.satellitetracker.di.dispatchers.DispatcherProvider
 import com.example.satellitetracker.domain.model.Position
@@ -46,7 +47,7 @@ class SatelliteRepositoryImpl @Inject constructor(
             if (detail == null) {
                 val jsonString = context.assets.open("satellite-detail.json").bufferedReader()
                     .use { it.readText() }
-                val details: List<SatelliteDetail> =
+                val details: List<SatelliteDetailDto> =
                     json.decodeFromString(jsonString)
                 val found = details.find { it.id == id }
                 detail = found?.let {

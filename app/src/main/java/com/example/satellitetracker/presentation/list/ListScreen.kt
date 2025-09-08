@@ -30,7 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.satellitetracker.data.model.Satellite
+import com.example.satellitetracker.domain.model.Satellite
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -121,7 +121,7 @@ fun SatelliteListItem(
             modifier = Modifier
                 .size(12.dp)
                 .clip(CircleShape)
-                .background(if (satellite.active) Color.Green else Color.Red)
+                .background(if (satellite.isActive) Color.Green else Color.Red)
         )
         Spacer(modifier = Modifier.width(16.dp))
         Text(text = satellite.name)

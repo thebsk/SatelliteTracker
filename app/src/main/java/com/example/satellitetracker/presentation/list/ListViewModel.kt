@@ -2,9 +2,9 @@ package com.example.satellitetracker.presentation.list
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.satellitetracker.data.model.Satellite
+import com.example.satellitetracker.domain.model.Satellite
 import com.example.satellitetracker.di.dispatchers.DispatcherProvider
-import com.example.satellitetracker.core.use_cases.GetSatellitesUseCase
+import com.example.satellitetracker.domain.usecase.GetSatellitesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow

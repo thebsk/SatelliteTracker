@@ -1,7 +1,7 @@
-package com.example.satellitetracker.core.use_cases
+package com.example.satellitetracker.domain.usecase
 
-import com.example.satellitetracker.core.domain.repository.SatelliteRepository
-import com.example.satellitetracker.data.model.Satellite
+import com.example.satellitetracker.domain.model.Satellite
+import com.example.satellitetracker.domain.repository.SatelliteRepository
 import javax.inject.Inject
 
 class GetSatellitesUseCase @Inject constructor(
@@ -11,3 +11,5 @@ class GetSatellitesUseCase @Inject constructor(
         return repository.getSatellites()
     }
 }
+
+

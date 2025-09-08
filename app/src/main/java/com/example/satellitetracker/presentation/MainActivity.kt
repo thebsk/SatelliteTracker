@@ -1,11 +1,10 @@
-package com.example.satellitetracker
+package com.example.satellitetracker.presentation
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.example.satellitetracker.presentation.MainScreen
-import com.example.satellitetracker.ui.theme.SatelliteTrackerTheme
+import com.example.satellitetracker.presentation.theme.SatelliteTrackerTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

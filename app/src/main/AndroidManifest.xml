@@ -16,7 +16,7 @@
         android:theme="@style/Theme.SatelliteTracker"
         tools:targetApi="31">
         <activity
-            android:name="com.example.satellitetracker.MainActivity"
+            android:name="com.example.satellitetracker.presentation.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.SatelliteTracker">
             <intent-filter>

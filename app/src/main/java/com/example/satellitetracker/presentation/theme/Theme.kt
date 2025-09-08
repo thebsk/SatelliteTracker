@@ -1,4 +1,4 @@
-package com.example.satellitetracker.ui.theme
+package com.example.satellitetracker.presentation.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme

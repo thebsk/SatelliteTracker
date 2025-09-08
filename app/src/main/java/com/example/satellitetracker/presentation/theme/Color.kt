@@ -1,4 +1,4 @@
-package com.example.satellitetracker.ui.theme
+package com.example.satellitetracker.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 

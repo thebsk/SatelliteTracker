@@ -3,28 +3,43 @@ package com.example.satellitetracker.presentation.detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.satellitetracker.di.dispatchers.DispatcherProvider
 import com.example.satellitetracker.domain.model.Position
 import com.example.satellitetracker.domain.model.SatelliteDetail
-import com.example.satellitetracker.di.dispatchers.DispatcherProvider
-import com.example.satellitetracker.domain.usecase.GetSatelliteDetailUseCase
 import com.example.satellitetracker.domain.usecase.GetPositionUpdatesUseCase
+import com.example.satellitetracker.domain.usecase.GetSatelliteDetailUseCase
+import com.example.satellitetracker.presentation.mvi.DefaultEffectDelegateImpl
+import com.example.satellitetracker.presentation.mvi.DefaultEventDelegateImpl
+import com.example.satellitetracker.presentation.mvi.DefaultStateDelegateImpl
+import com.example.satellitetracker.presentation.mvi.EffectDelegate
+import com.example.satellitetracker.presentation.mvi.EventDelegate
+import com.example.satellitetracker.presentation.mvi.StateDelegate
+import com.example.satellitetracker.presentation.mvi.ViewEffect
+import com.example.satellitetracker.presentation.mvi.ViewEvent
+import com.example.satellitetracker.presentation.mvi.ViewState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
+
+sealed class DetailEvent : ViewEvent {
+    data object LoadSatelliteDetail : DetailEvent()
+}
 
 data class DetailUiState(
     val isLoading: Boolean = true,
     val satelliteDetail: SatelliteDetail? = null,
     val currentPosition: Position? = null,
     val error: String? = null
-)
+) : ViewState
+
+sealed class DetailEffect : ViewEffect {
+    data class ShowError(val message: String) : DetailEffect()
+}
 
 @HiltViewModel
 class DetailViewModel @Inject constructor(
@@ -32,47 +47,59 @@ class DetailViewModel @Inject constructor(
     private val getPositionUpdatesUseCase: GetPositionUpdatesUseCase,
     private val dispatcherProvider: DispatcherProvider,
     savedStateHandle: SavedStateHandle
-) : ViewModel() {
-
-    private val _uiState = MutableStateFlow(DetailUiState())
-    val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
+) : ViewModel(),
+    StateDelegate<DetailUiState> by DefaultStateDelegateImpl(DetailUiState()),
+    EventDelegate<DetailEvent> by DefaultEventDelegateImpl(),
+    EffectDelegate<DetailEffect> by DefaultEffectDelegateImpl() {
 
     private val satelliteId: Int = checkNotNull(savedStateHandle["satelliteId"])
 
     init {
-        fetchSatelliteDetails()
-        startPositionUpdates()
+        event
+            .onEach(::handleEvent)
+            .launchIn(viewModelScope)
+    }
+
+    private fun handleEvent(event: DetailEvent) {
+        when (event) {
+            is DetailEvent.LoadSatelliteDetail -> {
+                fetchSatelliteDetails()
+                startPositionUpdates()
+            }
+        }
     }
 
     private fun fetchSatelliteDetails() {
-        viewModelScope.launch(dispatcherProvider.io) {
-            _uiState.update { it.copy(isLoading = true) }
+        viewModelScope.launch {
+            setState { copy(isLoading = true) }
             try {
-                val detail = getSatelliteDetailUseCase(satelliteId)
-                _uiState.update { it.copy(isLoading = false, satelliteDetail = detail) }
+                val detail = withContext(dispatcherProvider.io) {
+                    getSatelliteDetailUseCase(satelliteId)
+                }
+                setState { copy(isLoading = false, satelliteDetail = detail) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = "Failed to fetch details") }
+                val errorMessage = "Failed to fetch details"
+                setState { copy(isLoading = false, error = errorMessage) }
+                setEffect(DetailEffect.ShowError(errorMessage))
             }
         }
     }
 
     private fun startPositionUpdates() {
-        viewModelScope.launch(dispatcherProvider.io) {
+        viewModelScope.launch {
             try {
-                val positionList = getPositionUpdatesUseCase(satelliteId)
-                positionList?.positions?.let { positions ->
-                    flow {
-                        for (position in positions) {
-                            emit(position)
-                            delay(3000)
-                        }
-                    }.flowOn(dispatcherProvider.io)
-                    .collect { position ->
-                        _uiState.update { it.copy(currentPosition = position) }
-                    }
+                val positions = withContext(dispatcherProvider.io) {
+                    getPositionUpdatesUseCase(satelliteId)?.positions.orEmpty()
                 }
+                positions.asFlow()
+                    .collect { position ->
+                        setState { copy(currentPosition = position) }
+                        delay(3000)
+                    }
             } catch (e: Exception) {
-                 _uiState.update { it.copy(error = "Failed to fetch positions") }
+                val errorMessage = "Failed to fetch positions"
+                setState { copy(error = errorMessage) }
+                setEffect(DetailEffect.ShowError(errorMessage))
             }
         }
     }

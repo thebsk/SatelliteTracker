@@ -10,7 +10,7 @@ import com.example.satellitetracker.presentation.detail.DetailScreen
 import com.example.satellitetracker.presentation.list.ListScreen
 
 @Composable
-fun NavGraph(navController: NavHostController) {
+fun NavGraph(navController: NavHostController, showSnackBar: (String) -> Unit) {
     NavHost(
         navController = navController,
         startDestination = Screen.ListScreen.route
@@ -19,7 +19,8 @@ fun NavGraph(navController: NavHostController) {
             ListScreen(
                 onSatelliteClick = { satelliteId ->
                     navController.navigate(Screen.DetailScreen.createRoute(satelliteId))
-                }
+                },
+                showSnackBar = showSnackBar
             )
         }
         composable(

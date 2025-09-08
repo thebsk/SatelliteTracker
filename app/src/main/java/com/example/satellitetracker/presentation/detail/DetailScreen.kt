@@ -19,16 +19,20 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.satellitetracker.R
 import com.example.satellitetracker.domain.model.Position
 import com.example.satellitetracker.domain.model.SatelliteDetail
+import kotlinx.coroutines.flow.onEach
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,12 +40,33 @@ fun DetailScreen(
     viewModel: DetailViewModel = hiltViewModel(),
     onBackClick: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState(initial = DetailUiState())
+
+    LaunchedEffect(key1 = viewModel) {
+        with(viewModel) { setEvent(DetailEvent.LoadSatelliteDetail) }
+    }
+
+    LaunchedEffect(key1 = viewModel.effect) {
+        viewModel.effect.onEach { effect ->
+            when (effect) {
+                is DetailEffect.ShowError -> {
+                    // TODO: Show snackbar
+                    println("Error: ${effect.message}")
+                }
+            }
+        }.collect {}
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(uiState.satelliteDetail?.let { "Detail" } ?: "Loading...") },
+                title = {
+                    Text(
+                        text = uiState.satelliteDetail?.let {
+                            stringResource(id = R.string.detail_title)
+                        } ?: stringResource(id = R.string.loading)
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -80,15 +105,19 @@ fun SatelliteDetailContent(detail: SatelliteDetail, position: Position?) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        DetailRow("First Flight:", detail.firstFlight)
-        DetailRow("Height/Mass:", "${detail.height}/${detail.mass}")
-        DetailRow("Cost:", detail.costPerLaunch.toString())
+        DetailRow(stringResource(id = R.string.first_flight), detail.firstFlight)
+        DetailRow(stringResource(id = R.string.height_mass), "${detail.height}/${detail.mass}")
+        DetailRow(stringResource(id = R.string.cost), detail.costPerLaunch.toString())
         Spacer(modifier = Modifier.height(16.dp))
-        Text("Last Position:", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        Text(
+            stringResource(id = R.string.last_position),
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp
+        )
         if (position != null) {
             Text("(${position.posX}, ${position.posY})")
         } else {
-            Text("Loading position...")
+            Text(stringResource(id = R.string.loading_position))
         }
     }
 }

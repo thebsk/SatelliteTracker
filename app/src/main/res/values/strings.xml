@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">Satellite Tracker</string>
+
+    <string name="satellites_title">Satellites</string>
+    <string name="search_placeholder">Search...</string>
+    <string name="unknown_error">Unknown error</string>
+
+    <string name="detail_title">Detail</string>
+    <string name="loading">Loading...</string>
+    <string name="first_flight">First Flight:</string>
+    <string name="height_mass">Height/Mass:</string>
+    <string name="cost">Cost:</string>
+    <string name="last_position">Last Position:</string>
+    <string name="loading_position">Loading position...</string>
 </resources>

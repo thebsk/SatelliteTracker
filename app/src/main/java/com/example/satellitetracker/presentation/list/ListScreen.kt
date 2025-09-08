@@ -15,43 +15,64 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.satellitetracker.R
 import com.example.satellitetracker.domain.model.Satellite
+import kotlinx.coroutines.flow.onEach
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListScreen(
     onSatelliteClick: (Int) -> Unit,
+    showSnackBar: (String) -> Unit,
     viewModel: ListViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState(initial = ListUiState())
+
+    LaunchedEffect(key1 = viewModel) {
+        with(viewModel) { setEvent(ListEvent.LoadSatellites) }
+    }
+
+    LaunchedEffect(key1 = viewModel.effect) {
+        viewModel.effect.onEach { effect ->
+            when (effect) {
+                is ListEffect.ShowError -> {
+                    showSnackBar("Error: ${effect.message}")
+                }
+            }
+        }.collect {}
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Satellites") },
+                title = { Text(stringResource(id = R.string.satellites_title)) },
                 actions = {
                     TextField(
                         value = uiState.searchQuery,
                         onValueChange = { query ->
-                            viewModel.processIntent(ListIntent.SearchQueryChanged(query))
+                            with(viewModel) { setEvent(ListEvent.SearchQueryChanged(query)) }
                         },
-                        placeholder = { Text("Search...") },
-                        modifier = Modifier.fillMaxWidth().padding(end = 16.dp)
+                        placeholder = { Text(stringResource(id = R.string.search_placeholder)) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 16.dp)
                     )
                 }
             )
@@ -67,17 +88,16 @@ fun ListScreen(
                 uiState.isLoading -> {
                     CircularProgressIndicator()
                 }
+
                 uiState.errorMessage != null -> {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = uiState.errorMessage ?: "Unknown error")
                         Text(
-                            text = "Tap to retry",
-                            modifier = Modifier.clickable {
-                                viewModel.processIntent(ListIntent.Refresh)
-                            }
+                            text = uiState.errorMessage
+                                ?: stringResource(id = R.string.unknown_error)
                         )
                     }
                 }
+
                 else -> {
                     SatelliteList(
                         satellites = uiState.filteredSatellites,

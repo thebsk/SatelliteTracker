@@ -2,23 +2,30 @@ package com.example.satellitetracker.presentation.list
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.satellitetracker.domain.model.Satellite
 import com.example.satellitetracker.di.dispatchers.DispatcherProvider
+import com.example.satellitetracker.domain.model.Satellite
 import com.example.satellitetracker.domain.usecase.GetSatellitesUseCase
+import com.example.satellitetracker.presentation.mvi.DefaultEffectDelegateImpl
+import com.example.satellitetracker.presentation.mvi.DefaultEventDelegateImpl
+import com.example.satellitetracker.presentation.mvi.DefaultStateDelegateImpl
+import com.example.satellitetracker.presentation.mvi.EffectDelegate
+import com.example.satellitetracker.presentation.mvi.EventDelegate
+import com.example.satellitetracker.presentation.mvi.StateDelegate
+import com.example.satellitetracker.presentation.mvi.ViewEffect
+import com.example.satellitetracker.presentation.mvi.ViewEvent
+import com.example.satellitetracker.presentation.mvi.ViewState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-sealed interface ListIntent {
-    data object LoadSatellites : ListIntent
-    data class SearchQueryChanged(val query: String) : ListIntent
-    data object Refresh : ListIntent
+sealed class ListEvent : ViewEvent {
+    data object LoadSatellites : ListEvent()
+    data class SearchQueryChanged(val query: String) : ListEvent()
 }
 
 data class ListUiState(
@@ -27,73 +34,48 @@ data class ListUiState(
     val filteredSatellites: List<Satellite> = emptyList(),
     val searchQuery: String = "",
     val errorMessage: String? = null,
-    val isRefreshing: Boolean = false
-)
+) : ViewState
+
+sealed class ListEffect : ViewEffect {
+    data class ShowError(val message: String) : ListEffect()
+}
 
 @OptIn(FlowPreview::class)
 @HiltViewModel
 class ListViewModel @Inject constructor(
     private val getSatellitesUseCase: GetSatellitesUseCase,
     private val dispatcherProvider: DispatcherProvider
-) : ViewModel() {
-
-    private val _uiState = MutableStateFlow(ListUiState())
-    val uiState: StateFlow<ListUiState> = _uiState.asStateFlow()
-
-    private val _searchQuery = MutableStateFlow("")
+) : ViewModel(),
+    StateDelegate<ListUiState> by DefaultStateDelegateImpl(ListUiState()),
+    EventDelegate<ListEvent> by DefaultEventDelegateImpl(),
+    EffectDelegate<ListEffect> by DefaultEffectDelegateImpl() {
 
     init {
-        viewModelScope.launch(dispatcherProvider.io) {
-            processIntent(ListIntent.LoadSatellites)
-        }
+        event
+            .onEach(::handleEvent)
+            .launchIn(viewModelScope)
 
-        viewModelScope.launch(dispatcherProvider.io) {
-            _searchQuery
-                .debounce(300)
-                .collect(::filterSatellites)
-        }
+        event
+            .filterIsInstance<ListEvent.SearchQueryChanged>()
+            .debounce(300)
+            .onEach { queryChanged -> filterSatellites(queryChanged.query) }
+            .launchIn(viewModelScope)
     }
 
-    fun processIntent(intent: ListIntent) {
-        when (intent) {
-            is ListIntent.LoadSatellites -> loadSatellites()
-            is ListIntent.SearchQueryChanged -> updateSearchQuery(intent.query)
-            is ListIntent.Refresh -> refreshSatellites()
+    private fun handleEvent(event: ListEvent) {
+        when (event) {
+            is ListEvent.LoadSatellites -> loadSatellites()
+            is ListEvent.SearchQueryChanged -> setState { copy(searchQuery = event.query) }
         }
     }
 
     private fun loadSatellites() {
         viewModelScope.launch(dispatcherProvider.io) {
-            _uiState.update { state -> state.copy(isLoading = true, errorMessage = null) }
-            
-            try {
-                val satellites = getSatellitesUseCase()
-                _uiState.update { state ->
-                    state.copy(
-                        isLoading = false,
-                        satellites = satellites,
-                        filteredSatellites = satellites,
-                        errorMessage = null
-                    ) 
-                }
-            } catch (e: Exception) {
-                _uiState.update { state ->
-                    state.copy(
-                        isLoading = false,
-                        errorMessage = "Failed to load satellites: ${e.message}"
-                    ) 
-                }
-            }
-        }
-    }
+            setState { copy(isLoading = true, errorMessage = null) }
 
-    private fun refreshSatellites() {
-        viewModelScope.launch(dispatcherProvider.io) {
-            _uiState.update { state -> state.copy(isRefreshing = true, errorMessage = null) }
-            
             try {
                 val satellites = getSatellitesUseCase()
-                val currentQuery = _uiState.value.searchQuery
+                val currentQuery = uiState.value.searchQuery
                 val filteredSatellites = if (currentQuery.isBlank()) {
                     satellites
                 } else {
@@ -101,46 +83,36 @@ class ListViewModel @Inject constructor(
                         satellite.name.contains(currentQuery, ignoreCase = true)
                     }
                 }
-                
-                _uiState.update { state ->
-                    state.copy(
-                        isRefreshing = false,
+
+                setState {
+                    copy(
+                        isLoading = false,
                         satellites = satellites,
                         filteredSatellites = filteredSatellites,
                         errorMessage = null
-                    ) 
+                    )
                 }
             } catch (e: Exception) {
-                _uiState.update { state ->
-                    state.copy(
-                        isRefreshing = false,
-                        errorMessage = "Failed to refresh satellites: ${e.message}"
-                    ) 
+                val errorMessage = "Failed to load satellites: ${e.message}"
+                setState {
+                    copy(
+                        isLoading = false,
+                        errorMessage = errorMessage
+                    )
                 }
+                setEffect(ListEffect.ShowError(errorMessage))
             }
         }
-    }
-
-    private fun updateSearchQuery(query: String) {
-        _searchQuery.value = query
-        _uiState.update { state -> state.copy(searchQuery = query) }
     }
 
     private fun filterSatellites(query: String) {
-        val currentSatellites = _uiState.value.satellites
-        val filteredSatellites = if (query.isBlank()) {
-            currentSatellites
+        val filteredList = if (query.isBlank()) {
+            uiState.value.satellites
         } else {
-            currentSatellites.filter { satellite ->
+            uiState.value.satellites.filter { satellite ->
                 satellite.name.contains(query, ignoreCase = true)
             }
         }
-        
-        _uiState.update { state ->
-            state.copy(
-                searchQuery = query,
-                filteredSatellites = filteredSatellites
-            ) 
-        }
+        setState { copy(filteredSatellites = filteredList) }
     }
 }

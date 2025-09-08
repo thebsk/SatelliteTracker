@@ -13,9 +13,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import kotlin.time.ExperimentalTime
 
-@ExperimentalTime
 @ExperimentalCoroutinesApi
 class ListViewModelTest {
 
@@ -68,7 +66,10 @@ class ListViewModelTest {
             assertEquals("Failed to load satellites: $errorMessage", state.errorMessage)
         }
         viewModel.effect.test {
-            assertEquals(ListEffect.ShowError("Failed to load satellites: $errorMessage"), awaitItem())
+            assertEquals(
+                ListEffect.ShowError("Failed to load satellites: $errorMessage"),
+                awaitItem()
+            )
         }
     }
 

@@ -8,13 +8,13 @@ sealed interface Failure {
     data object NetworkUnavailable : Failure
     data object Timeout : Failure
 
-    // HTTP / API
+    // API
     data object Unauthorized : Failure      // 401
     data object Forbidden : Failure         // 403
     data object NotFound : Failure          // 404
     data class ServerError(val code: Int) : Failure // 5xx
     data class ClientError(val code: Int) : Failure // 4xx generic
 
-    // DB / Cache
+    // DB
     data object DatabaseError : Failure
 }

@@ -3,10 +3,11 @@ package com.example.satellitetracker.presentation.mvi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 interface StateDelegate<State : ViewState> {
     val uiState: StateFlow<State>
-    fun setState(reducer: State.() -> State)
+    fun updateState(reducer: State.() -> State)
 }
 
 class DefaultStateDelegateImpl<State : ViewState>(
@@ -15,7 +16,6 @@ class DefaultStateDelegateImpl<State : ViewState>(
     private val _uiState = MutableStateFlow(initialState)
     override val uiState = _uiState.asStateFlow()
 
-    override fun setState(reducer: State.() -> State) {
-        _uiState.value = uiState.value.reducer()
-    }
+    override fun updateState(reducer: State.() -> State) =
+        _uiState.update { state -> state.reducer() }
 }

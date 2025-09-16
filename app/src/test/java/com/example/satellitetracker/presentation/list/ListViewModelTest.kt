@@ -5,8 +5,10 @@ import com.example.satellitetracker.core.result.ApiResult
 import com.example.satellitetracker.core.result.Failure
 import com.example.satellitetracker.domain.model.Satellite
 import com.example.satellitetracker.domain.usecase.GetSatellitesUseCase
+import com.example.satellitetracker.presentation.ErrorMessageProvider
 import com.example.satellitetracker.utils.MainDispatcherRule
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -23,9 +25,16 @@ class ListViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val getSatellitesUseCase: GetSatellitesUseCase = mockk()
+    private val errorMessageProvider: ErrorMessageProvider = mockk {
+        every { fromFailure(Failure.Timeout) } returns "Failed to load satellites"
+    }
 
     private fun createViewModel(): ListViewModel {
-        return ListViewModel(getSatellitesUseCase, mainDispatcherRule.testDispatcherProvider)
+        return ListViewModel(
+            getSatellitesUseCase = getSatellitesUseCase,
+            errorMessageProvider = errorMessageProvider,
+            dispatcherProvider = mainDispatcherRule.testDispatcherProvider
+        )
     }
 
     @Test

@@ -18,15 +18,3 @@ sealed interface Failure {
     // DB / Cache
     data object DatabaseError : Failure
 }
-
-fun Failure.toUserMessage(): String = when (this) {
-    is Failure.NetworkUnavailable -> "No internet connection."
-    is Failure.Timeout -> "Request timed out. Please try again."
-    is Failure.Unauthorized -> "You are not authorized."
-    is Failure.Forbidden -> "Access denied."
-    is Failure.NotFound -> "Not found."
-    is Failure.ServerError -> "Server error. Please try later."
-    is Failure.ClientError -> "Something went wrong."
-    is Failure.DatabaseError -> "Local database error."
-    is Failure.Unexpected -> this.cause?.message ?: "Unexpected error occurred."
-}

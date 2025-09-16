@@ -9,7 +9,7 @@ import com.example.satellitetracker.domain.model.Position
 import com.example.satellitetracker.domain.model.SatelliteDetail
 import com.example.satellitetracker.domain.usecase.GetPositionUpdatesUseCase
 import com.example.satellitetracker.domain.usecase.GetSatelliteDetailUseCase
-import com.example.satellitetracker.core.result.toUserMessage
+import com.example.satellitetracker.presentation.ErrorMessageProvider
 import com.example.satellitetracker.presentation.mvi.DefaultEffectDelegateImpl
 import com.example.satellitetracker.presentation.mvi.DefaultEventDelegateImpl
 import com.example.satellitetracker.presentation.mvi.DefaultStateDelegateImpl
@@ -46,7 +46,8 @@ sealed class DetailEffect : ViewEffect {
 class DetailViewModel @Inject constructor(
     private val getSatelliteDetailUseCase: GetSatelliteDetailUseCase,
     private val getPositionUpdatesUseCase: GetPositionUpdatesUseCase,
-    savedStateHandle: SavedStateHandle
+    private val errorMessageProvider: ErrorMessageProvider,
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel(),
     StateDelegate<DetailUiState> by DefaultStateDelegateImpl(DetailUiState()),
     EventDelegate<DetailEvent> by DefaultEventDelegateImpl(),
@@ -81,7 +82,7 @@ class DetailViewModel @Inject constructor(
                 }
 
                 is ApiResult.Error -> {
-                    val errorMessage = result.error.toUserMessage()
+                    val errorMessage = errorMessageProvider.fromFailure(result.error)
                     updateState { copy(isLoading = false, error = errorMessage) }
                     setEffect(DetailEffect.ShowError(errorMessage))
                 }
@@ -102,7 +103,7 @@ class DetailViewModel @Inject constructor(
             }
 
             is ApiResult.Error -> {
-                val errorMessage = result.error.toUserMessage()
+                val errorMessage = errorMessageProvider.fromFailure(result.error)
                 updateState { copy(error = errorMessage) }
                 setEffect(DetailEffect.ShowError(errorMessage))
             }

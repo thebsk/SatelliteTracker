@@ -75,7 +75,7 @@ fun DetailScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(id = R.string.content_description_back)
                         )
                     }
                 }

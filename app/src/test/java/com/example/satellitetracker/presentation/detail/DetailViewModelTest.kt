@@ -9,6 +9,7 @@ import com.example.satellitetracker.domain.model.PositionList
 import com.example.satellitetracker.domain.model.SatelliteDetail
 import com.example.satellitetracker.domain.usecase.GetPositionUpdatesUseCase
 import com.example.satellitetracker.domain.usecase.GetSatelliteDetailUseCase
+import com.example.satellitetracker.presentation.ErrorMessageProvider
 import com.example.satellitetracker.utils.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.every
@@ -29,12 +30,16 @@ class DetailViewModelTest {
 
     private val getSatelliteDetailUseCase: GetSatelliteDetailUseCase = mockk()
     private val getPositionUpdatesUseCase: GetPositionUpdatesUseCase = mockk()
+    private val errorMessageProvider: ErrorMessageProvider = mockk {
+        every { fromFailure(Failure.NetworkUnavailable) } returns "Failed to fetch details"
+    }
     private val savedStateHandle: SavedStateHandle = mockk()
 
     private fun createViewModel(): DetailViewModel {
         return DetailViewModel(
             getSatelliteDetailUseCase = getSatelliteDetailUseCase,
             getPositionUpdatesUseCase = getPositionUpdatesUseCase,
+            errorMessageProvider = errorMessageProvider,
             savedStateHandle = savedStateHandle
         )
     }
@@ -123,10 +128,10 @@ class DetailViewModelTest {
             if (state.isLoading) state = awaitItem()
             assertFalse(state.isLoading)
             assertEquals(satelliteDetail, state.satelliteDetail)
-            assertEquals("Failed to fetch positions", state.error)
+            assertEquals("Failed to fetch details", state.error)
         }
         viewModel.effect.test {
-            assertEquals(DetailEffect.ShowError("Failed to fetch positions"), awaitItem())
+            assertEquals(DetailEffect.ShowError("Failed to fetch details"), awaitItem())
         }
     }
 }

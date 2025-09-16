@@ -12,4 +12,17 @@
     <string name="cost">Cost:</string>
     <string name="last_position">Last Position:</string>
     <string name="loading_position">Loading position...</string>
+    <string name="content_description_back">Back</string>
+    <string name="content_description_clear">Clear</string>
+    <string name="error_prefix">Error: %1$s</string>
+
+    <string name="error_network_unavailable">No internet connection.</string>
+    <string name="error_timeout">Request timed out. Please try again.</string>
+    <string name="error_unauthorized">You are not authorized.</string>
+    <string name="error_forbidden">Access denied.</string>
+    <string name="error_not_found">Not found.</string>
+    <string name="error_server">Server error. Please try later.</string>
+    <string name="error_client">Something went wrong.</string>
+    <string name="error_database">Local database error.</string>
+    <string name="error_unexpected">Unexpected error occurred.</string>
 </resources>

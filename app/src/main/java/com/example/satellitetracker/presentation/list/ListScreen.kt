@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -53,6 +54,7 @@ fun ListScreen(
     viewModel: ListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState(initial = ListUiState())
+    val context = LocalContext.current
 
     LaunchedEffect(key1 = viewModel) {
         with(viewModel) { setEvent(ListEvent.LoadSatellites) }
@@ -62,7 +64,7 @@ fun ListScreen(
         viewModel.effect.onEach { effect ->
             when (effect) {
                 is ListEffect.ShowError -> {
-                    showSnackBar("Error: ${effect.message}")
+                    showSnackBar(context.getString(R.string.error_prefix, effect.message))
                 }
             }
         }.collect {}
@@ -95,7 +97,10 @@ fun ListScreen(
                         IconButton(onClick = {
                             with(viewModel) { setEvent(ListEvent.SearchQueryChanged("")) }
                         }) {
-                            Icon(imageVector = Icons.Default.Close, contentDescription = "Clear")
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = stringResource(id = R.string.content_description_clear)
+                            )
                         }
                     }
                 },

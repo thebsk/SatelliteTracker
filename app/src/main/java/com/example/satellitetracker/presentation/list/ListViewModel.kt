@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.satellitetracker.core.result.ApiResult
 import com.example.satellitetracker.di.dispatchers.DispatcherProvider
-import com.example.satellitetracker.core.result.toUserMessage
+import com.example.satellitetracker.presentation.ErrorMessageProvider
 import com.example.satellitetracker.domain.model.Satellite
 import com.example.satellitetracker.domain.usecase.GetSatellitesUseCase
 import com.example.satellitetracker.presentation.mvi.DefaultEffectDelegateImpl
@@ -48,7 +48,8 @@ sealed class ListEffect : ViewEffect {
 @HiltViewModel
 class ListViewModel @Inject constructor(
     private val getSatellitesUseCase: GetSatellitesUseCase,
-    private val dispatcherProvider: DispatcherProvider
+    private val dispatcherProvider: DispatcherProvider,
+    private val errorMessageProvider: ErrorMessageProvider
 ) : ViewModel(),
     StateDelegate<ListUiState> by DefaultStateDelegateImpl(ListUiState()),
     EventDelegate<ListEvent> by DefaultEventDelegateImpl(),
@@ -100,7 +101,7 @@ class ListViewModel @Inject constructor(
                 }
 
                 is ApiResult.Error -> {
-                    val errorMessage = result.error.toUserMessage()
+                    val errorMessage = errorMessageProvider.fromFailure(result.error)
                     updateState {
                         copy(
                             isLoading = false,

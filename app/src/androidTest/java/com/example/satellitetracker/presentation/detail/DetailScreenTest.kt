@@ -11,6 +11,7 @@ import com.example.satellitetracker.domain.model.PositionList
 import com.example.satellitetracker.domain.model.SatelliteDetail
 import com.example.satellitetracker.domain.usecase.GetPositionUpdatesUseCase
 import com.example.satellitetracker.domain.usecase.GetSatelliteDetailUseCase
+import com.example.satellitetracker.presentation.ErrorMessageProvider
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -27,6 +28,8 @@ class DetailScreenTest {
 
     private val getSatelliteDetailUseCase: GetSatelliteDetailUseCase = mockk()
     private val getPositionUpdatesUseCase: GetPositionUpdatesUseCase = mockk()
+    private val errorMessageProvider: ErrorMessageProvider = mockk()
+
     private lateinit var detailViewModel: DetailViewModel
 
     private val mockSatelliteDetail = SatelliteDetail(
@@ -45,6 +48,7 @@ class DetailScreenTest {
             DetailViewModel(
                 getSatelliteDetailUseCase = getSatelliteDetailUseCase,
                 getPositionUpdatesUseCase = getPositionUpdatesUseCase,
+                errorMessageProvider = errorMessageProvider,
                 savedStateHandle = mockk {
                     every { get<Int>("satelliteId") } returns 1
                 }

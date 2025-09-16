@@ -2,6 +2,8 @@ package com.example.satellitetracker.presentation.detail
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.example.satellitetracker.core.result.ApiResult
+import com.example.satellitetracker.core.result.Failure
 import com.example.satellitetracker.domain.model.Position
 import com.example.satellitetracker.domain.model.PositionList
 import com.example.satellitetracker.domain.model.SatelliteDetail
@@ -33,7 +35,6 @@ class DetailViewModelTest {
         return DetailViewModel(
             getSatelliteDetailUseCase = getSatelliteDetailUseCase,
             getPositionUpdatesUseCase = getPositionUpdatesUseCase,
-            dispatcherProvider = mainDispatcherRule.testDispatcherProvider,
             savedStateHandle = savedStateHandle
         )
     }
@@ -52,8 +53,8 @@ class DetailViewModelTest {
         val positionList = PositionList(id = "1", positions = listOf(position))
 
         every { savedStateHandle.get<Int>("satelliteId") } returns satelliteId
-        coEvery { getSatelliteDetailUseCase(satelliteId) } returns satelliteDetail
-        coEvery { getPositionUpdatesUseCase(satelliteId) } returns positionList
+        coEvery { getSatelliteDetailUseCase(satelliteId) } returns ApiResult.Success(satelliteDetail)
+        coEvery { getPositionUpdatesUseCase(satelliteId) } returns ApiResult.Success(positionList)
 
         val viewModel = createViewModel()
 
@@ -73,11 +74,10 @@ class DetailViewModelTest {
     @Test
     fun `LoadSatelliteDetail should show error when detail fetch fails`() = runTest {
         val satelliteId = 1
-        val errorMessage = "Error fetching details"
 
         every { savedStateHandle.get<Int>("satelliteId") } returns satelliteId
-        coEvery { getSatelliteDetailUseCase(satelliteId) } throws RuntimeException(errorMessage)
-        coEvery { getPositionUpdatesUseCase(satelliteId) } returns null
+        coEvery { getSatelliteDetailUseCase(satelliteId) } returns ApiResult.Error(Failure.NetworkUnavailable)
+        coEvery { getPositionUpdatesUseCase(satelliteId) } returns ApiResult.Success(null)
 
         val viewModel = createViewModel()
 
@@ -86,7 +86,8 @@ class DetailViewModelTest {
         }
 
         viewModel.uiState.test {
-            val state = awaitItem()
+            var state = awaitItem()
+            if (state.isLoading) state = awaitItem()
             assertFalse(state.isLoading)
             assertEquals("Failed to fetch details", state.error)
         }
@@ -106,11 +107,10 @@ class DetailViewModelTest {
             height = 500,
             mass = 300
         )
-        val errorMessage = "Error fetching positions"
 
         every { savedStateHandle.get<Int>("satelliteId") } returns satelliteId
-        coEvery { getSatelliteDetailUseCase(satelliteId) } returns satelliteDetail
-        coEvery { getPositionUpdatesUseCase(satelliteId) } throws RuntimeException(errorMessage)
+        coEvery { getSatelliteDetailUseCase(satelliteId) } returns ApiResult.Success(satelliteDetail)
+        coEvery { getPositionUpdatesUseCase(satelliteId) } returns ApiResult.Error(Failure.NetworkUnavailable)
 
         val viewModel = createViewModel()
 
@@ -119,7 +119,8 @@ class DetailViewModelTest {
         }
 
         viewModel.uiState.test {
-            val state = awaitItem()
+            var state = awaitItem()
+            if (state.isLoading) state = awaitItem()
             assertFalse(state.isLoading)
             assertEquals(satelliteDetail, state.satelliteDetail)
             assertEquals("Failed to fetch positions", state.error)

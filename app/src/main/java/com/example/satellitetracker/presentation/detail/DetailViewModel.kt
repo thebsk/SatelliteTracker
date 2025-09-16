@@ -1,13 +1,15 @@
 package com.example.satellitetracker.presentation.detail
 
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.satellitetracker.di.dispatchers.DispatcherProvider
+import com.example.satellitetracker.core.result.ApiResult
 import com.example.satellitetracker.domain.model.Position
 import com.example.satellitetracker.domain.model.SatelliteDetail
 import com.example.satellitetracker.domain.usecase.GetPositionUpdatesUseCase
 import com.example.satellitetracker.domain.usecase.GetSatelliteDetailUseCase
+import com.example.satellitetracker.core.result.toUserMessage
 import com.example.satellitetracker.presentation.mvi.DefaultEffectDelegateImpl
 import com.example.satellitetracker.presentation.mvi.DefaultEventDelegateImpl
 import com.example.satellitetracker.presentation.mvi.DefaultStateDelegateImpl
@@ -23,7 +25,6 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 sealed class DetailEvent : ViewEvent {
@@ -45,7 +46,6 @@ sealed class DetailEffect : ViewEffect {
 class DetailViewModel @Inject constructor(
     private val getSatelliteDetailUseCase: GetSatelliteDetailUseCase,
     private val getPositionUpdatesUseCase: GetPositionUpdatesUseCase,
-    private val dispatcherProvider: DispatcherProvider,
     savedStateHandle: SavedStateHandle
 ) : ViewModel(),
     StateDelegate<DetailUiState> by DefaultStateDelegateImpl(DetailUiState()),
@@ -69,36 +69,41 @@ class DetailViewModel @Inject constructor(
         }
     }
 
-    private fun fetchSatelliteDetails() {
+    @VisibleForTesting
+    internal fun fetchSatelliteDetails() {
         viewModelScope.launch {
-            setState { copy(isLoading = true) }
-            try {
-                val detail = withContext(dispatcherProvider.io) {
-                    getSatelliteDetailUseCase(satelliteId)
+            updateState { copy(isLoading = true) }
+
+            when (val result = getSatelliteDetailUseCase(satelliteId)) {
+                is ApiResult.Success -> {
+                    val detail = result.data
+                    updateState { copy(isLoading = false, satelliteDetail = detail) }
                 }
-                setState { copy(isLoading = false, satelliteDetail = detail) }
-            } catch (e: Exception) {
-                val errorMessage = "Failed to fetch details"
-                setState { copy(isLoading = false, error = errorMessage) }
-                setEffect(DetailEffect.ShowError(errorMessage))
+
+                is ApiResult.Error -> {
+                    val errorMessage = result.error.toUserMessage()
+                    updateState { copy(isLoading = false, error = errorMessage) }
+                    setEffect(DetailEffect.ShowError(errorMessage))
+                }
             }
         }
     }
 
-    private fun startPositionUpdates() {
-        viewModelScope.launch {
-            try {
-                val positions = withContext(dispatcherProvider.io) {
-                    getPositionUpdatesUseCase(satelliteId)?.positions.orEmpty()
-                }
-                positions.asFlow()
-                    .collect { position ->
-                        setState { copy(currentPosition = position) }
+    private fun startPositionUpdates() = viewModelScope.launch {
+        when (val result = getPositionUpdatesUseCase(satelliteId)) {
+            is ApiResult.Success -> {
+                result.data?.positions.orEmpty()
+                    .asFlow()
+                    .onEach { position ->
+                        updateState { copy(currentPosition = position) }
                         delay(3000)
                     }
-            } catch (e: Exception) {
-                val errorMessage = "Failed to fetch positions"
-                setState { copy(error = errorMessage) }
+                    .launchIn(this)
+            }
+
+            is ApiResult.Error -> {
+                val errorMessage = result.error.toUserMessage()
+                updateState { copy(error = errorMessage) }
                 setEffect(DetailEffect.ShowError(errorMessage))
             }
         }

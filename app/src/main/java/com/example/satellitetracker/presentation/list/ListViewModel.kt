@@ -2,7 +2,9 @@ package com.example.satellitetracker.presentation.list
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.satellitetracker.core.result.ApiResult
 import com.example.satellitetracker.di.dispatchers.DispatcherProvider
+import com.example.satellitetracker.core.result.toUserMessage
 import com.example.satellitetracker.domain.model.Satellite
 import com.example.satellitetracker.domain.usecase.GetSatellitesUseCase
 import com.example.satellitetracker.presentation.mvi.DefaultEffectDelegateImpl
@@ -18,7 +20,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -58,61 +62,64 @@ class ListViewModel @Inject constructor(
         event
             .filterIsInstance<ListEvent.SearchQueryChanged>()
             .debounce(300)
-            .onEach { queryChanged -> filterSatellites(queryChanged.query) }
+            .map { queryChanged ->
+                currentState.satellites.filterSatellites(queryChanged.query)
+            }
+            .flowOn(dispatcherProvider.io)
+            .onEach { filteredSatellites ->
+                updateState { copy(filteredSatellites = filteredSatellites) }
+            }
             .launchIn(viewModelScope)
     }
 
     private fun handleEvent(event: ListEvent) {
         when (event) {
             is ListEvent.LoadSatellites -> loadSatellites()
-            is ListEvent.SearchQueryChanged -> setState { copy(searchQuery = event.query) }
+            is ListEvent.SearchQueryChanged -> updateState { copy(searchQuery = event.query) }
         }
     }
 
     private fun loadSatellites() {
         viewModelScope.launch(dispatcherProvider.io) {
-            setState { copy(isLoading = true, errorMessage = null) }
+            updateState { copy(isLoading = true, errorMessage = null) }
 
-            try {
-                val satellites = getSatellitesUseCase()
-                val currentQuery = uiState.value.searchQuery
-                val filteredSatellites = if (currentQuery.isBlank()) {
-                    satellites
-                } else {
-                    satellites.filter { satellite ->
-                        satellite.name.contains(currentQuery, ignoreCase = true)
+            when (val result = getSatellitesUseCase()) {
+                is ApiResult.Success -> {
+                    val satelliteList: List<Satellite> = result.data
+                    val currentQuery = uiState.value.searchQuery
+                    val filteredSatellites = satelliteList.filterSatellites(currentQuery)
+
+                    updateState {
+                        copy(
+                            isLoading = false,
+                            satellites = satelliteList,
+                            filteredSatellites = filteredSatellites,
+                            errorMessage = null
+                        )
                     }
                 }
 
-                setState {
-                    copy(
-                        isLoading = false,
-                        satellites = satellites,
-                        filteredSatellites = filteredSatellites,
-                        errorMessage = null
-                    )
+                is ApiResult.Error -> {
+                    val errorMessage = result.error.toUserMessage()
+                    updateState {
+                        copy(
+                            isLoading = false,
+                            errorMessage = errorMessage
+                        )
+                    }
+                    setEffect(ListEffect.ShowError(errorMessage))
                 }
-            } catch (e: Exception) {
-                val errorMessage = "Failed to load satellites: ${e.message}"
-                setState {
-                    copy(
-                        isLoading = false,
-                        errorMessage = errorMessage
-                    )
-                }
-                setEffect(ListEffect.ShowError(errorMessage))
             }
         }
     }
 
-    private fun filterSatellites(query: String) {
-        val filteredList = if (query.isBlank()) {
-            uiState.value.satellites
+    private fun List<Satellite>.filterSatellites(query: String): List<Satellite> {
+        return if (query.isBlank()) {
+            this
         } else {
-            uiState.value.satellites.filter { satellite ->
+            this.filter { satellite ->
                 satellite.name.contains(query, ignoreCase = true)
             }
         }
-        setState { copy(filteredSatellites = filteredList) }
     }
 }

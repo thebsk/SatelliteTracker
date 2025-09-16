@@ -11,10 +11,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -50,7 +54,9 @@ fun DetailScreen(
     LaunchedEffect(key1 = viewModel.effect) {
         viewModel.effect.onEach { effect ->
             when (effect) {
-                is DetailEffect.ShowError -> { showSnackBar(effect.message) }
+                is DetailEffect.ShowError -> {
+                    showSnackBar(effect.message)
+                }
             }
         }.collect {}
     }
@@ -79,18 +85,27 @@ fun DetailScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
+                .padding(paddingValues)
         ) {
-            if (uiState.isLoading) {
-                CircularProgressIndicator()
-            } else if (uiState.error != null) {
-                Text(text = uiState.error!!)
-            } else if (uiState.satelliteDetail != null) {
-                SatelliteDetailContent(
-                    detail = uiState.satelliteDetail!!,
-                    position = uiState.currentPosition
-                )
+            when {
+                uiState.isLoading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+
+                uiState.error != null -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(text = uiState.error!!)
+                    }
+                }
+
+                uiState.satelliteDetail != null -> {
+                    SatelliteDetailContent(
+                        detail = uiState.satelliteDetail!!,
+                        position = uiState.currentPosition
+                    )
+                }
             }
         }
     }
@@ -101,12 +116,36 @@ fun SatelliteDetailContent(detail: SatelliteDetail, position: Position?) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        DetailRow(stringResource(id = R.string.first_flight), detail.firstFlight)
-        DetailRow(stringResource(id = R.string.height_mass), "${detail.height}/${detail.mass}")
-        DetailRow(stringResource(id = R.string.cost), detail.costPerLaunch.toString())
-        Spacer(modifier = Modifier.height(16.dp))
+        OutlinedCard(
+            colors = CardDefaults.outlinedCardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                DetailRow(
+                    label = stringResource(id = R.string.first_flight),
+                    value = detail.firstFlight
+                )
+                HorizontalDivider()
+                DetailRow(
+                    label = stringResource(id = R.string.height_mass),
+                    value = "${detail.height}/${detail.mass}"
+                )
+                HorizontalDivider()
+                DetailRow(
+                    label = stringResource(id = R.string.cost),
+                    value = detail.costPerLaunch.toString()
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             stringResource(id = R.string.last_position),
             fontWeight = FontWeight.Bold,
@@ -123,11 +162,12 @@ fun SatelliteDetailContent(detail: SatelliteDetail, position: Position?) {
 @Composable
 fun DetailRow(label: String, value: String) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(text = label, fontWeight = FontWeight.Bold)
         Text(text = value)
     }
-    Spacer(modifier = Modifier.height(8.dp))
 }

@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.example.satellitetracker.core.result.ApiResult
 import com.example.satellitetracker.di.dispatchers.DispatcherProvider
 import com.example.satellitetracker.domain.model.Satellite
 import com.example.satellitetracker.domain.usecase.GetSatellitesUseCase
@@ -35,15 +36,19 @@ class ListScreenTest {
 
     private lateinit var viewModel: ListViewModel
 
+    private val mockSatellites = listOf(
+        Satellite(1, "Satellite 1", true),
+        Satellite(2, "Satellite 2", false)
+    )
+
     private fun createViewModel(): ListViewModel {
         return ListViewModel(getSatellitesUseCase, testDispatcherProvider)
     }
 
     @Before
     fun setUp() {
+        coEvery { getSatellitesUseCase() } returns ApiResult.Success(mockSatellites)
         viewModel = createViewModel()
-
-        coEvery { getSatellitesUseCase() } returns emptyList()
     }
 
     @Test
@@ -56,15 +61,7 @@ class ListScreenTest {
             )
         }
 
-        val satellites = listOf(
-            Satellite(1, "Satellite 1", true),
-            Satellite(2, "Satellite 2", false)
-        )
-        with(viewModel) {
-            setState { ListUiState(filteredSatellites = satellites) }
-        }
-
-        satellites.forEach { satellite ->
+        mockSatellites.forEach { satellite ->
             composeTestRule.onNodeWithText(satellite.name).assertIsDisplayed()
         }
     }
@@ -80,10 +77,7 @@ class ListScreenTest {
             )
         }
 
-        val satellite = Satellite(1, "Satellite 1", true)
-        with(viewModel) {
-            setState { ListUiState(filteredSatellites = listOf(satellite)) }
-        }
+        val satellite = mockSatellites.first()
 
         composeTestRule.onNodeWithText(satellite.name).performClick()
 

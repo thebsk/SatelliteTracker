@@ -12,14 +12,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -63,46 +72,68 @@ fun ListScreen(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(id = R.string.satellites_title)) },
-                actions = {
-                    TextField(
-                        value = uiState.searchQuery,
-                        onValueChange = { query ->
-                            with(viewModel) { setEvent(ListEvent.SearchQueryChanged(query)) }
-                        },
-                        placeholder = { Text(stringResource(id = R.string.search_placeholder)) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(end = 16.dp)
-                    )
-                }
+                actions = {}
             )
         }
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            when {
-                uiState.isLoading -> {
-                    CircularProgressIndicator()
-                }
+            OutlinedTextField(
+                value = uiState.searchQuery,
+                onValueChange = { query ->
+                    with(viewModel) { setEvent(ListEvent.SearchQueryChanged(query)) }
+                },
+                leadingIcon = {
+                    Icon(imageVector = Icons.Default.Search, contentDescription = null)
+                },
+                trailingIcon = {
+                    if (uiState.searchQuery.isNotEmpty()) {
+                        IconButton(onClick = {
+                            with(viewModel) { setEvent(ListEvent.SearchQueryChanged("")) }
+                        }) {
+                            Icon(imageVector = Icons.Default.Close, contentDescription = "Clear")
+                        }
+                    }
+                },
+                placeholder = { Text(stringResource(id = R.string.search_placeholder)) },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                )
+            )
 
-                uiState.errorMessage != null -> {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = uiState.errorMessage
-                                ?: stringResource(id = R.string.unknown_error)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    uiState.isLoading -> {
+                        CircularProgressIndicator()
+                    }
+
+                    uiState.errorMessage != null -> {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = uiState.errorMessage
+                                    ?: stringResource(id = R.string.unknown_error)
+                            )
+                        }
+                    }
+
+                    else -> {
+                        SatelliteList(
+                            satellites = uiState.filteredSatellites,
+                            onSatelliteClick = onSatelliteClick
                         )
                     }
-                }
-
-                else -> {
-                    SatelliteList(
-                        satellites = uiState.filteredSatellites,
-                        onSatelliteClick = onSatelliteClick
-                    )
                 }
             }
         }
@@ -115,12 +146,14 @@ fun SatelliteList(
     onSatelliteClick: (Int) -> Unit
 ) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(satellites) { satellite ->
+        itemsIndexed(satellites) { index, satellite ->
             SatelliteListItem(
                 satellite = satellite,
                 onClick = { onSatelliteClick(satellite.id) }
             )
-            HorizontalDivider()
+            if (index < satellites.lastIndex) {
+                HorizontalDivider()
+            }
         }
     }
 }
@@ -130,20 +163,31 @@ fun SatelliteListItem(
     satellite: Satellite,
     onClick: () -> Unit
 ) {
-    Row(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Box(
+        Row(
             modifier = Modifier
-                .size(12.dp)
-                .clip(CircleShape)
-                .background(if (satellite.isActive) Color.Green else Color.Red)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(text = satellite.name)
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .clip(CircleShape)
+                    .background(if (satellite.isActive) Color(0xFF2E7D32) else Color(0xFFC62828))
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = satellite.name,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.clickable(onClick = onClick)
+            )
+        }
     }
 }

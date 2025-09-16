@@ -5,52 +5,62 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import com.example.satellitetracker.di.dispatchers.DispatcherProvider
+import com.example.satellitetracker.core.result.ApiResult
 import com.example.satellitetracker.domain.model.Position
+import com.example.satellitetracker.domain.model.PositionList
 import com.example.satellitetracker.domain.model.SatelliteDetail
 import com.example.satellitetracker.domain.usecase.GetPositionUpdatesUseCase
 import com.example.satellitetracker.domain.usecase.GetSatelliteDetailUseCase
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.spyk
 import io.mockk.verify
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class DetailScreenTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    private val testDispatcher = UnconfinedTestDispatcher()
-    private val testDispatcherProvider = object : DispatcherProvider {
-        override val default: CoroutineDispatcher = testDispatcher
-        override val io: CoroutineDispatcher = testDispatcher
-        override val main: CoroutineDispatcher = Dispatchers.Main
-    }
-
     private val getSatelliteDetailUseCase: GetSatelliteDetailUseCase = mockk()
     private val getPositionUpdatesUseCase: GetPositionUpdatesUseCase = mockk()
     private lateinit var detailViewModel: DetailViewModel
 
+    private val mockSatelliteDetail = SatelliteDetail(
+        id = 1,
+        firstFlight = "2020-01-01",
+        costPerLaunch = 1000,
+        height = 500,
+        mass = 300
+    )
+    private val mockPositionList = PositionList(
+        id = "1", positions = listOf(Position(1.0, 2.0))
+    )
+
     private fun createViewModel(): DetailViewModel {
-        return DetailViewModel(
-            getSatelliteDetailUseCase = getSatelliteDetailUseCase,
-            getPositionUpdatesUseCase = getPositionUpdatesUseCase,
-            dispatcherProvider = testDispatcherProvider,
-            savedStateHandle = mockk {
-                every { get<Int>("satelliteId") } returns 1
-            }
+        return spyk(
+            DetailViewModel(
+                getSatelliteDetailUseCase = getSatelliteDetailUseCase,
+                getPositionUpdatesUseCase = getPositionUpdatesUseCase,
+                savedStateHandle = mockk {
+                    every { get<Int>("satelliteId") } returns 1
+                }
+            )
         )
     }
 
     @Before
     fun setUp() {
+        coEvery { getSatelliteDetailUseCase.invoke(any()) } returns ApiResult.Success(
+            mockSatelliteDetail
+        )
+        coEvery { getPositionUpdatesUseCase.invoke(any()) } returns ApiResult.Success(
+            mockPositionList
+        )
+
         detailViewModel = createViewModel()
     }
 
@@ -64,23 +74,8 @@ class DetailScreenTest {
             )
         }
 
-        val satelliteDetail = SatelliteDetail(
-            id = 1,
-            firstFlight = "2020-01-01",
-            costPerLaunch = 1000,
-            height = 500,
-            mass = 300
-        )
-        val position = Position(1.0, 2.0)
-        with(detailViewModel) {
-            setState {
-                DetailUiState(
-                    isLoading = false,
-                    satelliteDetail = satelliteDetail,
-                    currentPosition = position
-                )
-            }
-        }
+        val satelliteDetail = mockSatelliteDetail
+        val position = mockPositionList.positions.first()
 
         composeTestRule.onNodeWithText(satelliteDetail.firstFlight).assertIsDisplayed()
         composeTestRule.onNodeWithText("${satelliteDetail.height}/${satelliteDetail.mass}")
@@ -98,10 +93,6 @@ class DetailScreenTest {
                 onBackClick = onBackClick,
                 viewModel = detailViewModel
             )
-        }
-
-        with(detailViewModel) {
-            setState { DetailUiState(isLoading = false) }
         }
 
         composeTestRule.onNodeWithContentDescription("Back").performClick()

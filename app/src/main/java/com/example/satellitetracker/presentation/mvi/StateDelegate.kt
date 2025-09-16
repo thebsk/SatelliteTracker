@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.update
 
 interface StateDelegate<State : ViewState> {
     val uiState: StateFlow<State>
+    val currentState: State
     fun updateState(reducer: State.() -> State)
 }
 
@@ -15,6 +16,8 @@ class DefaultStateDelegateImpl<State : ViewState>(
 ) : StateDelegate<State> {
     private val _uiState = MutableStateFlow(initialState)
     override val uiState = _uiState.asStateFlow()
+    override val currentState: State
+        get() = uiState.value
 
     override fun updateState(reducer: State.() -> State) =
         _uiState.update { state -> state.reducer() }

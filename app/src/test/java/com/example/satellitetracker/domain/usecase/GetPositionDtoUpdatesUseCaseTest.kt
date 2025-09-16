@@ -1,5 +1,6 @@
 package com.example.satellitetracker.domain.usecase
 
+import com.example.satellitetracker.core.result.ApiResult
 import com.example.satellitetracker.domain.model.Position
 import com.example.satellitetracker.domain.model.PositionList
 import com.example.satellitetracker.domain.repository.SatelliteRepository
@@ -15,7 +16,7 @@ class GetPositionDtoUpdatesUseCaseTest {
     private val getPositionUpdatesUseCase = GetPositionUpdatesUseCase(repository)
 
     @Test
-    fun `invoke should return position list from repository`() = runTest {
+    fun `invoke should return position list from repository with successful response`() = runTest {
         val satelliteId = 1
         val positionList = PositionList(
             id = "1",
@@ -24,10 +25,10 @@ class GetPositionDtoUpdatesUseCaseTest {
                 Position(3.0, 4.0)
             )
         )
-        coEvery { repository.getPositions(satelliteId) } returns positionList
+        coEvery { repository.getPositions(satelliteId) } returns ApiResult.Success(positionList)
 
         val result = getPositionUpdatesUseCase(satelliteId)
 
-        assertEquals(positionList, result)
+        assertEquals(positionList, result.success)
     }
 }

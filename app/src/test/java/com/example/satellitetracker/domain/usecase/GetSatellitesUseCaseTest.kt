@@ -1,5 +1,6 @@
 package com.example.satellitetracker.domain.usecase
 
+import com.example.satellitetracker.core.result.ApiResult
 import com.example.satellitetracker.domain.model.Satellite
 import com.example.satellitetracker.domain.repository.SatelliteRepository
 import io.mockk.coEvery
@@ -19,10 +20,10 @@ class GetSatellitesUseCaseTest {
             Satellite(1, "Satellite 1", true),
             Satellite(2, "Satellite 2", false)
         )
-        coEvery { repository.getSatellites() } returns satellites
+        coEvery { repository.getSatellites() } returns ApiResult.Success(satellites)
 
         val result = getSatellitesUseCase()
 
-        assertEquals(satellites, result)
+        assertEquals(satellites, result.success)
     }
 }

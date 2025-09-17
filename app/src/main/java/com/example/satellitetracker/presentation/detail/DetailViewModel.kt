@@ -19,6 +19,7 @@ import com.example.satellitetracker.presentation.mvi.StateDelegate
 import com.example.satellitetracker.presentation.mvi.ViewEffect
 import com.example.satellitetracker.presentation.mvi.ViewEvent
 import com.example.satellitetracker.presentation.mvi.ViewState
+import com.example.satellitetracker.presentation.navigation.NavArgs
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.asFlow
@@ -53,7 +54,7 @@ class DetailViewModel @Inject constructor(
     EventDelegate<DetailEvent> by DefaultEventDelegateImpl(),
     EffectDelegate<DetailEffect> by DefaultEffectDelegateImpl() {
 
-    private val satelliteId: Int = checkNotNull(savedStateHandle["satelliteId"])
+    private val satelliteId: Int by lazy { checkNotNull(savedStateHandle[NavArgs.SATELLITE_ID]) }
 
     init {
         event

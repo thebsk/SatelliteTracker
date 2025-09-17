@@ -61,20 +61,19 @@ fun ListScreen(
     }
 
     LaunchedEffect(key1 = viewModel.effect) {
-        viewModel.effect.onEach { effect ->
+        viewModel.effect.collect { effect ->
             when (effect) {
                 is ListEffect.ShowError -> {
                     showSnackBar(context.getString(R.string.error_prefix, effect.message))
                 }
             }
-        }.collect {}
+        }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(id = R.string.satellites_title)) },
-                actions = {}
             )
         }
     ) { paddingValues ->

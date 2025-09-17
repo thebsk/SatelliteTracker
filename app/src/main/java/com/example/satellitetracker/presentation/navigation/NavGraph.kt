@@ -25,7 +25,7 @@ fun NavGraph(navController: NavHostController, showSnackBar: (String) -> Unit) {
         }
         composable(
             route = Screens.DetailScreen.route,
-            arguments = listOf(navArgument("satelliteId") { type = NavType.IntType })
+            arguments = listOf(navArgument(NavArgs.SATELLITE_ID) { type = NavType.IntType })
         ) {
             DetailScreen(
                 onBackClick = { navController.navigateUp() },

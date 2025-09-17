@@ -5,7 +5,6 @@ import retrofit2.HttpException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.sql.SQLException
-import java.util.NoSuchElementException
 
 fun Throwable.toFailure(): Failure = when (this) {
     is UnknownHostException -> Failure.NetworkUnavailable
@@ -22,6 +21,5 @@ fun Throwable.toFailure(): Failure = when (this) {
     }
 
     is SQLException -> Failure.DatabaseError
-    is NoSuchElementException -> Failure.NotFound
     else -> Failure.Unexpected(this)
 }

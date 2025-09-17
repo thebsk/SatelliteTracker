@@ -28,21 +28,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-sealed class DetailEvent : ViewEvent {
-    data object LoadSatelliteDetail : DetailEvent()
-}
-
-data class DetailUiState(
-    val isLoading: Boolean = true,
-    val satelliteDetail: SatelliteDetail? = null,
-    val currentPosition: Position? = null,
-    val error: String? = null
-) : ViewState
-
-sealed class DetailEffect : ViewEffect {
-    data class ShowError(val message: String) : DetailEffect()
-}
-
 @HiltViewModel
 class DetailViewModel @Inject constructor(
     private val getSatelliteDetailUseCase: GetSatelliteDetailUseCase,

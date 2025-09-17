@@ -29,14 +29,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.satellitetracker.R
 import com.example.satellitetracker.domain.model.Position
 import com.example.satellitetracker.domain.model.SatelliteDetail
-import kotlinx.coroutines.flow.onEach
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,13 +49,13 @@ fun DetailScreen(
     }
 
     LaunchedEffect(key1 = viewModel.effect) {
-        viewModel.effect.onEach { effect ->
+        viewModel.effect.collect { effect ->
             when (effect) {
                 is DetailEffect.ShowError -> {
                     showSnackBar(effect.message)
                 }
             }
-        }.collect {}
+        }
     }
 
     Scaffold(
@@ -96,7 +93,7 @@ fun DetailScreen(
 
                 uiState.error != null -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = uiState.error!!)
+                        Text(text = uiState.error.orEmpty())
                     }
                 }
 
@@ -112,7 +109,7 @@ fun DetailScreen(
 }
 
 @Composable
-fun SatelliteDetailContent(detail: SatelliteDetail, position: Position?) {
+fun SatelliteDetailContent(detail: SatelliteDetail, position: Position?) =
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -147,27 +144,24 @@ fun SatelliteDetailContent(detail: SatelliteDetail, position: Position?) {
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            stringResource(id = R.string.last_position),
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp
+            text = stringResource(id = R.string.last_position),
+            style = MaterialTheme.typography.titleMedium
         )
         if (position != null) {
-            Text("(${position.posX}, ${position.posY})")
+            Text(text = "(${position.posX}, ${position.posY})")
         } else {
-            Text(stringResource(id = R.string.loading_position))
+            Text(text = stringResource(id = R.string.loading_position))
         }
     }
-}
 
 @Composable
-fun DetailRow(label: String, value: String) {
+fun DetailRow(label: String, value: String) =
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(text = label, fontWeight = FontWeight.Bold)
-        Text(text = value)
+        Text(text = label, style = MaterialTheme.typography.titleSmall)
+        Text(text = value, style = MaterialTheme.typography.bodyMedium)
     }
-}

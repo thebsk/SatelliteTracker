@@ -27,23 +27,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-sealed class ListEvent : ViewEvent {
-    data object LoadSatellites : ListEvent()
-    data class SearchQueryChanged(val query: String) : ListEvent()
-}
-
-data class ListUiState(
-    val isLoading: Boolean = false,
-    val satellites: List<Satellite> = emptyList(),
-    val filteredSatellites: List<Satellite> = emptyList(),
-    val searchQuery: String = "",
-    val errorMessage: String? = null,
-) : ViewState
-
-sealed class ListEffect : ViewEffect {
-    data class ShowError(val message: String) : ListEffect()
-}
-
 @OptIn(FlowPreview::class)
 @HiltViewModel
 class ListViewModel @Inject constructor(

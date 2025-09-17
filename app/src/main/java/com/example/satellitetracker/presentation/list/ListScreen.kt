@@ -1,7 +1,6 @@
 package com.example.satellitetracker.presentation.list
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,14 +36,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.satellitetracker.R
 import com.example.satellitetracker.domain.model.Satellite
-import kotlinx.coroutines.flow.onEach
+import com.example.satellitetracker.presentation.theme.ActiveColor
+import com.example.satellitetracker.presentation.theme.PassiveColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -166,32 +165,29 @@ fun SatelliteList(
 fun SatelliteListItem(
     satellite: Satellite,
     onClick: () -> Unit
+) = Card(
+    onClick = onClick,
+    modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 8.dp, vertical = 6.dp),
+    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
 ) {
-    Card(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(12.dp)
-                    .clip(CircleShape)
-                    .background(if (satellite.isActive) Color(0xFF2E7D32) else Color(0xFFC62828))
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = satellite.name,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.clickable(onClick = onClick)
-            )
-        }
+                .size(12.dp)
+                .clip(CircleShape)
+                .background(if (satellite.isActive) ActiveColor else PassiveColor)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text = satellite.name,
+            style = MaterialTheme.typography.bodyLarge,
+        )
     }
 }

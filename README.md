@@ -8,7 +8,7 @@ SatelliteTracker is a sample satellite tracking application built with **Kotlin*
 </p>
 
 ## Download
-- **Latest debug APK**: [Download](https://github.com/thebsk/SatelliteTracker/releases/download/1.0/app-debug.apk)
+- **Latest debug APK**: [Download](https://github.com/thebsk/SatelliteTracker/releases/download/1.1/app-debug.apk)
   
 ## Features
 - Searchable list of satellites with active status indicators.

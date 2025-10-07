@@ -7,6 +7,7 @@ import com.example.satellitetracker.core.util.AssetFileReader
 import com.example.satellitetracker.data.dto.PositionsResponseDto
 import com.example.satellitetracker.data.dto.SatelliteDetailDto
 import com.example.satellitetracker.data.dto.SatelliteDto
+import com.example.satellitetracker.data.mapper.DtoMapper
 import com.example.satellitetracker.data.local.SatelliteDao
 import com.example.satellitetracker.data.local.SatelliteDetailEntity
 import com.example.satellitetracker.data.local.toSatelliteDetail
@@ -26,7 +27,8 @@ class SatelliteRepositoryImpl @Inject constructor(
     private val assetFileReader: AssetFileReader,
     private val satelliteDao: SatelliteDao,
     private val json: Json,
-    private val dispatcherProvider: DispatcherProvider
+    private val dispatcherProvider: DispatcherProvider,
+    private val dtoMapper: DtoMapper
 ) : SatelliteRepository {
 
     private companion object {
@@ -40,14 +42,7 @@ class SatelliteRepositoryImpl @Inject constructor(
             runCatchingApi {
                 val jsonString = assetFileReader.readAssetFile(SATELLITES_FILE)
                 val dataSatellites = json.decodeFromString<List<SatelliteDto>>(jsonString)
-
-                dataSatellites.map { dto ->
-                    Satellite(
-                        id = dto.id,
-                        isActive = dto.active,
-                        name = dto.name
-                    )
-                }
+                dataSatellites.map { dtoMapper.toDomain(it) }
             }
         }
 
@@ -60,15 +55,7 @@ class SatelliteRepositoryImpl @Inject constructor(
                     val details: List<SatelliteDetailDto> =
                         json.decodeFromString(jsonString)
                     val found = details.find { it.id == id }
-                    detail = found?.let {
-                        SatelliteDetail(
-                            id = it.id,
-                            costPerLaunch = it.costPerLaunch,
-                            firstFlight = it.firstFlight,
-                            height = it.height,
-                            mass = it.mass,
-                        )
-                    }
+                    detail = found?.let { dtoMapper.toDomain(it) }
                     detail?.let { ensuredDetail ->
                         satelliteDao.insertSatelliteDetail(
                             SatelliteDetailEntity(
@@ -91,17 +78,7 @@ class SatelliteRepositoryImpl @Inject constructor(
                 val jsonString = assetFileReader.readAssetFile(POSITIONS_FILE)
                 val response: PositionsResponseDto = json.decodeFromString(jsonString)
                 val found = response.list.find { it.id == satelliteId.toString() }
-                val positions = found?.let { candidate ->
-                    PositionList(
-                        id = candidate.id,
-                        positions = candidate.positions.map { p ->
-                            Position(
-                                posX = p.posX,
-                                posY = p.posY
-                            )
-                        }
-                    )
-                }
+                val positions = found?.let { dtoMapper.toDomain(it) }
                 positions
             }
         }
